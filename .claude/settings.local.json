@@ -1,8 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "PowerShell(Get-Location; if \\(-not \\(Test-Path \"E:\\\\WORK\\\\Sample_hive_repo\"\\)\\) { New-Item -ItemType Directory \"E:\\\\WORK\\\\Sample_hive_repo\" }; Get-ChildItem \"E:\\\\WORK\\\\Sample_hive_repo\")",
-      "PowerShell(Get-ChildItem -Recurse E:\\\\WORK\\\\Sample_hive_repo -File | Select-Object FullName | Measure-Object | ForEach-Object { \"Total files: $\\($_.Count\\)\" }; Get-ChildItem -Recurse E:\\\\WORK\\\\Sample_hive_repo -File | Select-Object -ExpandProperty FullName | Sort-Object)"
-    ]
-  }
-}
