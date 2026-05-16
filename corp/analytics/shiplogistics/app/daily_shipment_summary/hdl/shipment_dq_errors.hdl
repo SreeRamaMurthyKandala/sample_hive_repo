@@ -1,0 +1,34 @@
+-- ----------------------------------------------------------------------------
+-- shipment_dq_errors.hdl
+-- Detail table of data-quality errors flagged during the daily summary run.
+-- Partitioned by trans_dt for easy day-by-day triage.
+-- ----------------------------------------------------------------------------
+
+USE ${uc_db};
+
+DROP TABLE IF EXISTS shipment_dq_errors;
+
+CREATE EXTERNAL TABLE shipment_dq_errors (
+  shipment_id            STRING,
+  tracking_number        STRING,
+  carrier_id             STRING,
+  route_id               STRING,
+  error_code             STRING,
+  error_description      STRING,
+  record_type            STRING,
+  shipment_status_code   STRING,
+  weight_kg              DECIMAL(10,2),
+  declared_value         DECIMAL(15,2),
+  shipping_charge        DECIMAL(15,2),
+  load_timestamp         STRING
+)
+COMMENT 'Data quality errors detected during daily summary join'
+PARTITIONED BY (trans_dt STRING)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+LINES TERMINATED BY '\n'
+STORED AS TEXTFILE
+LOCATION '/corp/analytics/shiplogistics/warehouse/shiplogistics_db/shipment_dq_errors'
+TBLPROPERTIES (
+  'serialization.null.format'=''
+);

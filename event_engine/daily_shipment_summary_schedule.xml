@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<EventEngine>
+  <Event>
+    <EventId>SHIPLOGISTICS_DAILY_SHIPMENT_SUMMARY_DAILY</EventId>
+    <Description>Daily summary of shipment activity joined with carrier and route dimensions. Produces shiplogistics_db.shipment_summary and writes flagged rows to shiplogistics_db.shipment_dq_errors. Runs Mon-Sat at 05:30 ET after the staging table is loaded.</Description>
+    <Schedule>
+      <Type>CRON</Type>
+      <Expression>30 5 * * 1-6</Expression>
+      <TimeZone>America/New_York</TimeZone>
+    </Schedule>
+    <Action>
+      <Type>SHELL</Type>
+      <Command>/corp/analytics/shiplogistics/app/daily_shipment_summary/scripts/daily_shipment_summary_trigger.sh</Command>
+      <RunAsUser>svc_shiplogistics</RunAsUser>
+      <WorkingDir>/corp/analytics/shiplogistics/app/daily_shipment_summary</WorkingDir>
+      <YarnQueue>shiplogistics</YarnQueue>
+      <TimeoutMinutes>90</TimeoutMinutes>
+    </Action>
+    <OnFailure>
+      <Notify>true</Notify>
+      <Email>[REDACTED_EMAIL_ADDRESS_1]</Email>
+      <RetryCount>1</RetryCount>
+      <RetryDelayMinutes>15</RetryDelayMinutes>
+    </OnFailure>
+    <OnSuccess>
+      <PublishEvent>SHIPLOGISTICS_SUMMARY_READY</PublishEvent>
+    </OnSuccess>
+    <Dependency>SHIPLOGISTICS_STG_SHIPMENTS_READY</Dependency>
+  </Event>
+</EventEngine>

@@ -1,0 +1,37 @@
+-- ----------------------------------------------------------------------------
+-- dim_route.hdl
+-- Use-case dimension table for routes. Fully refreshed each Sunday from
+-- the upstream master record set. A _bkp variant is created at runtime by
+-- weekly_dim_refresh_backup.hql for rollback.
+-- ----------------------------------------------------------------------------
+
+USE ${dim_db};
+
+DROP TABLE IF EXISTS dim_route;
+
+CREATE EXTERNAL TABLE dim_route (
+  route_id                 STRING,
+  route_code               STRING,
+  route_name               STRING,
+  origin_facility_cd       STRING,
+  destination_facility_cd  STRING,
+  transit_mode             STRING,
+  distance_km              DECIMAL(10,2),
+  standard_transit_days    BIGINT,
+  base_cost                DECIMAL(15,2),
+  fuel_surcharge_pct       DECIMAL(5,2),
+  region_cd                STRING,
+  status                   STRING,
+  eff_dt                   STRING,
+  exp_dt                   STRING,
+  load_timestamp           STRING
+)
+COMMENT 'Active-only route dimension, full-refreshed weekly'
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+LINES TERMINATED BY '\n'
+STORED AS TEXTFILE
+LOCATION '/corp/analytics/shiplogistics/warehouse/shiplogistics_dim_db/dim_route'
+TBLPROPERTIES (
+  'serialization.null.format'=''
+);

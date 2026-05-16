@@ -1,0 +1,44 @@
+-- ----------------------------------------------------------------------------
+-- src_shipments.hdl
+-- External table over the daily OMS shipment export drop. One partition per
+-- transaction date. The file format is the standard HiveGrid TSV drop.
+-- ----------------------------------------------------------------------------
+
+USE ${cs_db};
+
+DROP TABLE IF EXISTS src_shipments;
+
+CREATE EXTERNAL TABLE src_shipments (
+  shipment_id              STRING,
+  tracking_number          STRING,
+  origin_facility_cd       STRING,
+  destination_facility_cd  STRING,
+  carrier_id               STRING,
+  route_id                 STRING,
+  record_type              STRING,
+  shipment_status_code     STRING,
+  service_level            STRING,
+  booking_channel          STRING,
+  customer_id              STRING,
+  weight_kg                DECIMAL(10,2),
+  volume_cbm               DECIMAL(10,4),
+  declared_value           DECIMAL(15,2),
+  shipping_charge          DECIMAL(15,2),
+  pickup_dt                STRING,
+  expected_delivery_dt     STRING,
+  delivery_dt              STRING,
+  source_system_cd         STRING
+)
+COMMENT 'Raw shipment header records exported daily from the Order Management System'
+PARTITIONED BY (trans_dt STRING)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+LINES TERMINATED BY '\n'
+STORED AS TEXTFILE
+LOCATION '/corp/analytics/shiplogistics/landing/hivesrcdb/src_shipments'
+TBLPROPERTIES (
+  'skip.header.line.count'='1',
+  'serialization.null.format'=''
+);
+
+MSCK REPAIR TABLE src_shipments;

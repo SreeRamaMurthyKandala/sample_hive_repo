@@ -1,0 +1,35 @@
+-- ----------------------------------------------------------------------------
+-- dim_carrier.hdl
+-- Use-case dimension table for carriers. Fully refreshed each Sunday from
+-- the upstream master record set. A _bkp variant is created at runtime by
+-- weekly_dim_refresh_backup.hql for rollback.
+-- ----------------------------------------------------------------------------
+
+USE ${dim_db};
+
+DROP TABLE IF EXISTS dim_carrier;
+
+CREATE EXTERNAL TABLE dim_carrier (
+  carrier_id        STRING,
+  carrier_code      STRING,
+  carrier_name      STRING,
+  carrier_type      STRING,
+  country_cd        STRING,
+  region_cd         STRING,
+  service_tier      STRING,
+  max_weight_kg     DECIMAL(10,2),
+  insurance_limit   DECIMAL(15,2),
+  status            STRING,
+  eff_dt            STRING,
+  exp_dt            STRING,
+  load_timestamp    STRING
+)
+COMMENT 'Active-only carrier dimension, full-refreshed weekly'
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+LINES TERMINATED BY '\n'
+STORED AS TEXTFILE
+LOCATION '/corp/analytics/shiplogistics/warehouse/shiplogistics_dim_db/dim_carrier'
+TBLPROPERTIES (
+  'serialization.null.format'=''
+);

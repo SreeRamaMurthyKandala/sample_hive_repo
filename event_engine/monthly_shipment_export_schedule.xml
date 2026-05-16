@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<EventEngine>
+  <Event>
+    <EventId>SHIPLOGISTICS_MONTHLY_SHIPMENT_EXPORT_MONTHLY</EventId>
+    <Description>Monthly PySpark export of the previous month's shipment_summary data to a CSV flat file with HEADER/TRAILER framing. The output is copied to the SFT outbound directory for downstream partner consumption. Runs on the 1st of every month at 07:00 ET.</Description>
+    <Schedule>
+      <Type>CRON</Type>
+      <Expression>0 7 1 * *</Expression>
+      <TimeZone>America/New_York</TimeZone>
+    </Schedule>
+    <Action>
+      <Type>SHELL</Type>
+      <Command>/corp/analytics/shiplogistics/app/monthly_shipment_export/scripts/monthly_shipment_export_trigger.sh</Command>
+      <RunAsUser>svc_shiplogistics</RunAsUser>
+      <WorkingDir>/corp/analytics/shiplogistics/app/monthly_shipment_export</WorkingDir>
+      <YarnQueue>shiplogistics</YarnQueue>
+      <TimeoutMinutes>180</TimeoutMinutes>
+    </Action>
+    <OnFailure>
+      <Notify>true</Notify>
+      <Email>[REDACTED_EMAIL_ADDRESS_1]</Email>
+      <RetryCount>1</RetryCount>
+      <RetryDelayMinutes>30</RetryDelayMinutes>
+    </OnFailure>
+    <OnSuccess>
+      <PublishEvent>SHIPLOGISTICS_MONTHLY_EXPORT_COMPLETE</PublishEvent>
+    </OnSuccess>
+    <Dependency>SHIPLOGISTICS_SUMMARY_READY</Dependency>
+  </Event>
+</EventEngine>

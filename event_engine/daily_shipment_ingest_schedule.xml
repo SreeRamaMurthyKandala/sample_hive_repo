@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<EventEngine>
+  <Event>
+    <EventId>SHIPLOGISTICS_DAILY_SHIPMENT_INGEST_DAILY</EventId>
+    <Description>Daily ingest of the previous day's raw shipment records from hivesrcdb.src_shipments into the partitioned staging table shiplogistics_db.stg_shipments. Runs Mon-Sat at 04:15 ET after the upstream OMS export.</Description>
+    <Schedule>
+      <Type>CRON</Type>
+      <Expression>15 4 * * 1-6</Expression>
+      <TimeZone>America/New_York</TimeZone>
+    </Schedule>
+    <Action>
+      <Type>SHELL</Type>
+      <Command>/corp/analytics/shiplogistics/app/daily_shipment_ingest/scripts/daily_shipment_ingest_trigger.sh</Command>
+      <RunAsUser>svc_shiplogistics</RunAsUser>
+      <WorkingDir>/corp/analytics/shiplogistics/app/daily_shipment_ingest</WorkingDir>
+      <YarnQueue>shiplogistics</YarnQueue>
+      <TimeoutMinutes>90</TimeoutMinutes>
+    </Action>
+    <OnFailure>
+      <Notify>true</Notify>
+      <Email>[REDACTED_EMAIL_ADDRESS_1]</Email>
+      <RetryCount>1</RetryCount>
+      <RetryDelayMinutes>15</RetryDelayMinutes>
+    </OnFailure>
+    <OnSuccess>
+      <PublishEvent>SHIPLOGISTICS_STG_SHIPMENTS_READY</PublishEvent>
+    </OnSuccess>
+    <Dependency>OMS_SHIPMENT_EXPORT_COMPLETE</Dependency>
+  </Event>
+</EventEngine>

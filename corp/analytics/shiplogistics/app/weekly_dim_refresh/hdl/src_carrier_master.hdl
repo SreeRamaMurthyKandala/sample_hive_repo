@@ -1,0 +1,36 @@
+-- ----------------------------------------------------------------------------
+-- src_carrier_master.hdl
+-- External table over the carrier master export (CSV header drop).
+-- ----------------------------------------------------------------------------
+
+USE ${cs_db};
+
+DROP TABLE IF EXISTS src_carrier_master;
+
+CREATE EXTERNAL TABLE src_carrier_master (
+  carrier_id        STRING,
+  carrier_code      STRING,
+  carrier_name      STRING,
+  carrier_type      STRING,
+  country_cd        STRING,
+  region_cd         STRING,
+  service_tier      STRING,
+  contract_number   STRING,
+  contact_phone     STRING,
+  contact_email     STRING,
+  max_weight_kg     DECIMAL(10,2),
+  insurance_limit   DECIMAL(15,2),
+  status            STRING,
+  eff_dt            STRING,
+  exp_dt            STRING
+)
+COMMENT 'Master record set of carriers exported weekly by the Vendor Management System'
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+LINES TERMINATED BY '\n'
+STORED AS TEXTFILE
+LOCATION '/corp/analytics/shiplogistics/landing/hivesrcdb/src_carrier_master'
+TBLPROPERTIES (
+  'skip.header.line.count'='1',
+  'serialization.null.format'=''
+);

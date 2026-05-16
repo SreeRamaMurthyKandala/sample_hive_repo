@@ -1,0 +1,28 @@
+-- ----------------------------------------------------------------------------
+-- export_log.hdl
+-- Audit table written by the PySpark export job. One row per attempt.
+-- ----------------------------------------------------------------------------
+
+USE ${uc_db};
+
+DROP TABLE IF EXISTS export_log;
+
+CREATE EXTERNAL TABLE export_log (
+  job_name        STRING,
+  run_dt          STRING,
+  export_month    STRING,
+  export_file     STRING,
+  record_cnt      BIGINT,
+  status          STRING,
+  error_message   STRING,
+  load_timestamp  TIMESTAMP
+)
+COMMENT 'Audit log of monthly_shipment_export runs - one row per attempt'
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+LINES TERMINATED BY '\n'
+STORED AS TEXTFILE
+LOCATION '/corp/analytics/shiplogistics/warehouse/shiplogistics_db/export_log'
+TBLPROPERTIES (
+  'serialization.null.format'=''
+);

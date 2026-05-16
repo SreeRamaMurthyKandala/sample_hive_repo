@@ -1,0 +1,36 @@
+-- ----------------------------------------------------------------------------
+-- src_shipment_events.hdl
+-- External table over the tracking-event feed. Joined to shipments to enrich
+-- the staging table with the latest scan event metadata.
+-- ----------------------------------------------------------------------------
+
+USE ${cs_db};
+
+DROP TABLE IF EXISTS src_shipment_events;
+
+CREATE EXTERNAL TABLE src_shipment_events (
+  event_id            STRING,
+  shipment_id         STRING,
+  event_type_cd       STRING,
+  event_facility_cd   STRING,
+  event_ts            STRING,
+  event_status        STRING,
+  exception_flag      STRING,
+  scanner_user_id     STRING,
+  carrier_id          STRING,
+  comments            STRING,
+  source_system_cd    STRING
+)
+COMMENT 'Per-shipment tracking events emitted by the carrier handoff systems'
+PARTITIONED BY (event_dt STRING)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+LINES TERMINATED BY '\n'
+STORED AS TEXTFILE
+LOCATION '/corp/analytics/shiplogistics/landing/hivesrcdb/src_shipment_events'
+TBLPROPERTIES (
+  'skip.header.line.count'='1',
+  'serialization.null.format'=''
+);
+
+MSCK REPAIR TABLE src_shipment_events;

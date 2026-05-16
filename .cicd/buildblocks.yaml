@@ -1,0 +1,129 @@
+###############################################################################
+# buildblocks.yaml - HiveGrid CI/CD pipeline definition
+#
+# The corporate "BuildBlocks" runner reads this file from the .cicd/ directory
+# and executes each block in declared order. Each block can be skipped per
+# environment via the gates.<env> map.
+###############################################################################
+
+apiVersion: buildblocks/v2
+kind: Pipeline
+metadata:
+  name: shiplogistics-pipeline
+  app: shiplogistics
+  owner: grp_shiplogistics_analytics
+  platform: HiveGrid
+
+defaults:
+  runAsUser: svc_shiplogistics
+  yarnQueue: shiplogistics
+  notify: [REDACTED_EMAIL_ADDRESS_1]
+  timeoutMinutes: 60
+  workingDir: corp/analytics/shiplogistics
+
+environments:
+  - name: dev
+    cluster: hivegrid-dev
+    hdfsRoot: /corp/analytics/shiplogistics
+    sourceDB: hivesrcdb_dev
+    useCaseDB: shiplogistics_db_dev
+    dimDB: shiplogistics_dim_db_dev
+  - name: qa
+    cluster: hivegrid-qa
+    hdfsRoot: /corp/analytics/shiplogistics
+    sourceDB: hivesrcdb_qa
+    useCaseDB: shiplogistics_db_qa
+    dimDB: shiplogistics_dim_db_qa
+  - name: prod
+    cluster: hivegrid-prod
+    hdfsRoot: /corp/analytics/shiplogistics
+    sourceDB: hivesrcdb
+    useCaseDB: shiplogistics_db
+    dimDB: shiplogistics_dim_db
+
+blocks:
+
+  - id: lint
+    description: Static analysis on HQL, ksh and PySpark sources
+    runner: shell
+    image: hivegrid/lint:2.1
+    commands:
+      - hivelint --config .cicd/lint/hive.cfg corp/analytics/shiplogistics/app/**/hql/*.hql
+      - shellcheck -s ksh corp/analytics/shiplogistics/app/**/scripts/*.sh
+      - flake8 --max-line-length=120 corp/analytics/shiplogistics/app/monthly_shipment_export/scripts/monthly_shipment_export.py
+    gates:
+      dev: true
+      qa: true
+      prod: true
+
+  - id: unit-test
+    description: PySpark unit tests for transform parity
+    runner: shell
+    image: hivegrid/pyspark-test:3.4.1
+    commands:
+      - pip install -r tests/requirements-test.txt
+      - pytest tests/ -v --junitxml=reports/junit.xml
+    artifacts:
+      - reports/junit.xml
+    gates:
+      dev: true
+      qa: true
+      prod: true
+
+  - id: deploy-hdl
+    description: Push DDL (HDL) files to the target cluster and execute via hive-runner
+    runner: hivegrid-deploy
+    files:
+      - corp/analytics/shiplogistics/app/daily_shipment_ingest/hdl/*.hdl
+      - corp/analytics/shiplogistics/app/weekly_dim_refresh/hdl/*.hdl
+      - corp/analytics/shiplogistics/app/daily_shipment_summary/hdl/*.hdl
+      - corp/analytics/shiplogistics/app/monthly_shipment_export/hdl/*.hdl
+    runWith: /corp/platform/hive/bin/hive-runner -f
+    gates:
+      dev: true
+      qa: true
+      prod: manual
+
+  - id: deploy-hql
+    description: Sync HQL and config files to the application home directory
+    runner: hivegrid-deploy
+    syncPaths:
+      - source: corp/analytics/shiplogistics/app/
+        target: /corp/analytics/shiplogistics/app/
+    gates:
+      dev: true
+      qa: true
+      prod: manual
+
+  - id: register-events
+    description: Register Event Engine XML schedules
+    runner: event-engine-cli
+    commands:
+      - eventctl register event_engine/daily_shipment_ingest_schedule.xml
+      - eventctl register event_engine/weekly_dim_refresh_schedule.xml
+      - eventctl register event_engine/daily_shipment_summary_schedule.xml
+      - eventctl register event_engine/monthly_shipment_export_schedule.xml
+    gates:
+      dev: true
+      qa: true
+      prod: manual
+
+  - id: smoke-test
+    description: Post-deploy smoke check on hive-runner connectivity
+    runner: shell
+    commands:
+      - /corp/platform/hive/bin/hive-runner -d uc_db=${useCaseDB} -e "USE ${uc_db}; SHOW TABLES;"
+    gates:
+      dev: true
+      qa: true
+      prod: true
+
+notifications:
+  onFailure:
+    email:
+      to: [REDACTED_EMAIL_ADDRESS_1]
+      subject: "BUILDBLOCKS FAILURE: shiplogistics ${env} block ${block}"
+  onSuccess:
+    email:
+      to: [REDACTED_EMAIL_ADDRESS_1]
+      subject: "BUILDBLOCKS SUCCESS: shiplogistics ${env} ${version}"

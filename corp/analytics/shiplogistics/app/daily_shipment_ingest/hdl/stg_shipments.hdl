@@ -1,0 +1,44 @@
+-- ----------------------------------------------------------------------------
+-- stg_shipments.hdl
+-- Partitioned staging table that the daily ingest job writes to via
+-- INSERT OVERWRITE. The downstream summary and DQ jobs read from this table.
+-- ----------------------------------------------------------------------------
+
+USE ${uc_db};
+
+DROP TABLE IF EXISTS stg_shipments;
+
+CREATE EXTERNAL TABLE stg_shipments (
+  shipment_id              STRING,
+  tracking_number          STRING,
+  origin_facility_cd       STRING,
+  destination_facility_cd  STRING,
+  carrier_id               STRING,
+  route_id                 STRING,
+  record_type              STRING,
+  shipment_status_code     STRING,
+  service_level            STRING,
+  booking_channel          STRING,
+  customer_id              STRING,
+  weight_kg                DECIMAL(10,2),
+  volume_cbm               DECIMAL(10,4),
+  declared_value           DECIMAL(15,2),
+  shipping_charge          DECIMAL(15,2),
+  pickup_dt                STRING,
+  expected_delivery_dt     STRING,
+  delivery_dt              STRING,
+  last_event_type_cd       STRING,
+  last_event_facility_cd   STRING,
+  last_event_ts            STRING,
+  load_timestamp           STRING
+)
+COMMENT 'Cleansed and filtered daily shipment staging table'
+PARTITIONED BY (trans_dt STRING)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+LINES TERMINATED BY '\n'
+STORED AS TEXTFILE
+LOCATION '/corp/analytics/shiplogistics/warehouse/shiplogistics_db/stg_shipments'
+TBLPROPERTIES (
+  'serialization.null.format'=''
+);

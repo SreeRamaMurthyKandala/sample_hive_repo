@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<EventEngine>
+  <Event>
+    <EventId>SHIPLOGISTICS_WEEKLY_DIM_REFRESH_WEEKLY</EventId>
+    <Description>Weekly full refresh of shiplogistics_dim_db.dim_carrier and shiplogistics_dim_db.dim_route from the source master tables in hivesrcdb. Backs up existing dim tables to _bkp suffix before refreshing. Runs every Sunday at 02:00 ET.</Description>
+    <Schedule>
+      <Type>CRON</Type>
+      <Expression>0 2 * * 0</Expression>
+      <TimeZone>America/New_York</TimeZone>
+    </Schedule>
+    <Action>
+      <Type>SHELL</Type>
+      <Command>/corp/analytics/shiplogistics/app/weekly_dim_refresh/scripts/weekly_dim_refresh_trigger.sh</Command>
+      <RunAsUser>svc_shiplogistics</RunAsUser>
+      <WorkingDir>/corp/analytics/shiplogistics/app/weekly_dim_refresh</WorkingDir>
+      <YarnQueue>shiplogistics</YarnQueue>
+      <TimeoutMinutes>120</TimeoutMinutes>
+    </Action>
+    <OnFailure>
+      <Notify>true</Notify>
+      <Email>[REDACTED_EMAIL_ADDRESS_1]</Email>
+      <RetryCount>1</RetryCount>
+      <RetryDelayMinutes>30</RetryDelayMinutes>
+    </OnFailure>
+    <OnSuccess>
+      <PublishEvent>SHIPLOGISTICS_DIMS_REFRESHED</PublishEvent>
+    </OnSuccess>
+    <Dependency>OMS_MASTER_EXPORT_COMPLETE</Dependency>
+  </Event>
+</EventEngine>

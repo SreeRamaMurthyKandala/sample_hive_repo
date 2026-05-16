@@ -1,0 +1,36 @@
+-- ----------------------------------------------------------------------------
+-- shipment_summary.hdl
+-- Daily aggregated summary partitioned by report_month for cheap month-range
+-- pruning during the monthly export.
+-- ----------------------------------------------------------------------------
+
+USE ${uc_db};
+
+DROP TABLE IF EXISTS shipment_summary;
+
+CREATE EXTERNAL TABLE shipment_summary (
+  report_date         STRING,
+  carrier_id          STRING,
+  carrier_name        STRING,
+  route_id            STRING,
+  region_cd           STRING,
+  transit_mode        STRING,
+  service_level       STRING,
+  total_count         BIGINT,
+  approved_count      BIGINT,
+  rejected_count      BIGINT,
+  total_amount        DECIMAL(18,2),
+  total_weight_kg     DECIMAL(18,2),
+  approval_rate       STRING,
+  load_timestamp      STRING
+)
+COMMENT 'Daily aggregated shipment metrics by carrier, route and service level'
+PARTITIONED BY (report_month STRING)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY '\t'
+LINES TERMINATED BY '\n'
+STORED AS TEXTFILE
+LOCATION '/corp/analytics/shiplogistics/warehouse/shiplogistics_db/shipment_summary'
+TBLPROPERTIES (
+  'serialization.null.format'=''
+);
